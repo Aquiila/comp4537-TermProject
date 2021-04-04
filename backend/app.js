@@ -1,10 +1,16 @@
 const { MethodEnum, Endpoint } = require('./models')
 const express = require('express')
 const app = express()
-var path = require('path')
+const cors = require('cors')
 const mysql = require('mysql')
 
 app.use(express.json());
+
+var corsOptions = {
+    origin: 'https://idetiampol.xyz',
+    optionsSuccessStatus: 200
+}
+app.use(cors(corsOptions));
 
 const port = process.env.PORT || 8080;
 
