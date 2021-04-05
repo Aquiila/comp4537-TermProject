@@ -7,10 +7,17 @@ const crypto = require('crypto')
 
 app.use(express.json());
 
-var corsOptions = {
-    origin: 'https://idetiampol.xyz',
-    optionsSuccessStatus: 200
+const whitelist = ['https://idetiampol.xyz', 'https://www.idetiampol.xyz']
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    }
 }
+
 app.use(cors(corsOptions));
 
 const port = process.env.PORT || 8080;
