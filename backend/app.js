@@ -43,7 +43,6 @@ app.use('/', express.static(__dirname + '/../public'))
 app.use(host, express.static(__dirname + '/../public'))
 
 app.get(host + '/endpoint', async (req, res) => {
-
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 1;";
 
@@ -54,16 +53,13 @@ app.get(host + '/endpoint', async (req, res) => {
     try {
         await queryPromise(updateEndPoint);
         let endPointResults = await queryPromise(getAllEndpointsQuery);
-        console.log("endPointResults: ", endPointResults);
 
         for (const result of endPointResults) {
-            console.log("inside for loop: ", result.Id);
             let endPoint = new Endpoint(result.Id, result.Url, result.Method, result.Requests);
 
             endpoints.push(endPoint);
         }
 
-        console.log("endpoints", endpoints);
         res.send(JSON.stringify(endpoints));
     } catch (error) {
         console.log(error);
@@ -72,9 +68,10 @@ app.get(host + '/endpoint', async (req, res) => {
 })
 
 app.post(host + '/user/create', async (req, res) => {
-
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 2;";
+
+    const getUserQuery = "SELECT Id, Name, Password, IsAdmin FROM User WHERE Name = ?";
 
     const insertUserQuery = "INSERT INTO User (Name, Password, IsAdmin) VALUES(?, ?, ?)";
 
@@ -82,24 +79,32 @@ app.post(host + '/user/create', async (req, res) => {
 
     // hash the password
     hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
-    console.log(hashPwd);
 
-    try {
-        await queryPromise(updateEndPoint);
-        // Insert user
-        let result = await queryPromise(insertUserQuery, [user.name, hashPwd, user.isAdmin]);
-        user.id = result.insertId;
+    if (user.name.trim().length < 3 || user.password.trim().length < 8) {
+        res.status(400).send("User name or password is too short.");
+    } else {
+        try {
+            let result = await queryPromise(getUserQuery, [user.name.trim]);
 
-        res.send(JSON.stringify(user));
+            if (result.length > 0) {
+                res.status(409).send("Username already exists.");
+            } else {
+                await queryPromise(updateEndPoint);
+                // Insert user
+                let result = await queryPromise(insertUserQuery, [user.name, hashPwd, user.isAdmin]);
+                user.id = result.insertId;
+
+                res.status(200).send(JSON.stringify(user));
+            }
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).send(JSON.stringify(error));
+        }
     }
-    catch (error) {
-        res.status(500).send(JSON.stringify(error));
-    }
-
 })
 
 app.post(host + '/user/login', async (req, res) => {
-
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 3;";
 
@@ -109,20 +114,23 @@ app.post(host + '/user/login', async (req, res) => {
 
     // hash the password
     hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
-    console.log(hashPwd);
 
     try {
         await queryPromise(updateEndPoint);
         // Insert user
         let result = await queryPromise(getUserQuery, [user.name, hashPwd]);
-        let verifiedUser = new User(result.Id, result.Name, result.Password, result.IsAdmin);
 
-        res.status(200).send(JSON.stringify(verifiedUser));
+        if (result.length == 0) {
+            res.status(401).send("Wrong credentials.");
+        } else {
+            let verifiedUser = new User(result[0].Id, result[0].Name, user.password, result[0].IsAdmin);
+            res.status(200).send(JSON.stringify(verifiedUser));
+        }
     }
     catch (error) {
+        console.log(error);
         res.status(500).send(JSON.stringify(error));
     }
-
 })
 
 app.listen(port, () => {
