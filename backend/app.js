@@ -1,8 +1,9 @@
-const { MethodEnum, Endpoint } = require('./models')
+const { MethodEnum, Endpoint, User } = require('./models')
 const express = require('express')
 const app = express()
 const cors = require('cors')
 const mysql = require('mysql')
+const crypto = require('crypto')
 
 app.use(express.json());
 
@@ -79,14 +80,44 @@ app.post(host + '/user/create', async (req, res) => {
 
     const user = req.body;
 
-    // TODO: hash the password
+    // hash the password
+    hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
+    console.log(hashPwd);
+
     try {
         await queryPromise(updateEndPoint);
         // Insert user
-        let result = await queryPromise(insertUserQuery, [user.name, user.password, user.isAdmin]);
+        let result = await queryPromise(insertUserQuery, [user.name, hashPwd, user.isAdmin]);
         user.id = result.insertId;
 
         res.send(JSON.stringify(user));
+    }
+    catch (error) {
+        res.status(500).send(JSON.stringify(error));
+    }
+
+})
+
+app.post(host + '/user/login', async (req, res) => {
+
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 3;";
+
+    const getUserQuery = "SELECT Id, Name, Password, IsAdmin FROM User WHERE Name = ? AND Password = ?";
+
+    const user = req.body;
+
+    // hash the password
+    hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
+    console.log(hashPwd);
+
+    try {
+        await queryPromise(updateEndPoint);
+        // Insert user
+        let result = await queryPromise(getUserQuery, [user.name, hashPwd]);
+        let verifiedUser = new User(result.Id, result.Name, result.Password, result.IsAdmin);
+
+        res.status(200).send(JSON.stringify(verifiedUser));
     }
     catch (error) {
         res.status(500).send(JSON.stringify(error));

@@ -14,5 +14,15 @@ class Endpoint {
     }
 }
 
+class User {
+    constructor(id, name, password, isAdmin) {
+        this.id = id;
+        this.name = name; // string
+        this.password = password; // string
+        this.isAdmin = isAdmin; // boolean
+    }
+}
+
 exports.Endpoint = Endpoint;
 exports.MethodEnum = MethodEnum;
+exports.User = User;
