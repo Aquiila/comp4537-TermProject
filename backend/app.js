@@ -9,13 +9,13 @@ app.use(express.json());
 
 const whitelist = ['https://idetiampol.xyz', 'https://www.idetiampol.xyz']
 const corsOptions = {
-    origin: function (origin, callback) {
-        if (whitelist.indexOf(origin) !== -1) {
-            callback(null, true)
-        } else {
-            callback(new Error('Not allowed by CORS'))
-        }
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
     }
+  }
 }
 
 app.use(cors(corsOptions));
@@ -91,7 +91,7 @@ app.post(host + '/user/create', async (req, res) => {
         res.status(400).send("User name or password is too short.");
     } else {
         try {
-            let result = await queryPromise(getUserQuery, [user.name.trim]);
+            let result = await queryPromise(getUserQuery, [user.name]);
 
             if (result.length > 0) {
                 res.status(409).send("Username already exists.");
