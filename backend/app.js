@@ -70,6 +70,30 @@ app.get(host + '/endpoint', async (req, res) => {
     }
 })
 
+app.post(host + '/user/create', async (req, res) => {
+
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 2;";
+
+    const insertUserQuery = "INSERT INTO User (Name, Password, IsAdmin) VALUES(?, ?, ?)";
+
+    const user = req.body;
+
+    // TODO: hash the password
+    try {
+        await queryPromise(updateEndPoint);
+        // Insert user
+        let result = await queryPromise(insertUserQuery, [user.name, user.password, user.isAdmin]);
+        user.id = result.insertId;
+
+        res.send(JSON.stringify(user));
+    }
+    catch (error) {
+        res.status(500).send(JSON.stringify(error));
+    }
+
+})
+
 app.listen(port, () => {
     console.log(`App listening at http://localhost:${port}`)
 })
