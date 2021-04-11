@@ -23,6 +23,25 @@ class User {
     }
 }
 
+class List {
+    constructor(id, title, userId) {
+        this.id = id;
+        this.title = title; // string
+        this.userId = userId; // int
+    }
+}
+
+class Todo {
+    constructor(id, title, listId, completed) {
+        this.id = id;
+        this.title = title; // string
+        this.listId = listId; // int
+        this.completed = completed; // boolean
+    }
+}
+
 exports.Endpoint = Endpoint;
 exports.MethodEnum = MethodEnum;
 exports.User = User;
+exports.List = List;
+exports.Todo = Todo;

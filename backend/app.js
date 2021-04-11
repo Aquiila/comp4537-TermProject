@@ -1,4 +1,4 @@
-const { MethodEnum, Endpoint, User } = require('./models')
+const { MethodEnum, Endpoint, User, List, Todo } = require('./models')
 const express = require('express')
 const app = express()
 const cors = require('cors')
@@ -9,13 +9,13 @@ app.use(express.json());
 
 const whitelist = ['https://idetiampol.xyz', 'https://www.idetiampol.xyz']
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (whitelist.indexOf(origin) !== -1 || !origin) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
     }
-  }
 }
 
 app.use(cors(corsOptions));
@@ -44,10 +44,6 @@ queryPromise = (queryText, values) => {
         });
     });
 };
-
-
-app.use('/', express.static(__dirname + '/../public'))
-app.use(host, express.static(__dirname + '/../public'))
 
 app.get(host + '/endpoint', async (req, res) => {
     // increase requests count
@@ -137,6 +133,71 @@ app.post(host + '/user/login', async (req, res) => {
     catch (error) {
         console.log(error);
         res.status(500).send(JSON.stringify(error));
+    }
+})
+
+app.post(host + '/list', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 4;";
+
+    const getUserQuery = "SELECT 1 FROM User WHERE Id = ?";
+
+    const insertListQuery = "INSERT INTO List (Title, UserId) VALUES(?, ?)";
+
+    const list = req.body;
+
+    if (list.title.trim().length == 0 || list.userId <= 0) {
+        res.status(400).send("List title is empty or user id is invalid.");
+    } else {
+        try {
+            let result = await queryPromise(getUserQuery, [list.userId]);
+
+            if (result.length < 1) {
+                res.status(401).send("User does not exist.");
+            } else {
+                await queryPromise(updateEndPoint);
+                // Insert list
+                let result = await queryPromise(insertListQuery, [list.title, list.userId]);
+                list.id = result.insertId;
+
+                res.status(200).send(JSON.stringify(list));
+            }
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).send(JSON.stringify(error));
+        }
+    }
+})
+
+app.get(host + '/list/:userId', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 5;";
+
+    const getAllListsForUserQuery = "SELECT Id, Title, UserId FROM List Where UserId = ?";
+
+    const { userId } = req.params;
+
+    let lists = [];
+
+    if (!userId || userId <= 0) {
+        res.status(400).send("User id is invalid.");
+    } else {
+        try {
+            await queryPromise(updateEndPoint);
+            let listResults = await queryPromise(getAllListsForUserQuery, [userId]);
+
+            for (const result of listResults) {
+                let list = new List(result.Id, result.Title, result.UserId);
+
+                lists.push(list);
+            }
+
+            res.send(JSON.stringify(lists));
+        } catch (error) {
+            console.log(error);
+            res.send(JSON.stringify(error));
+        }
     }
 })
 
