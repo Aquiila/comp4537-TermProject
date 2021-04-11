@@ -90,7 +90,10 @@ app.post(host + '/user/create', async (req, res) => {
             let result = await queryPromise(getUserQuery, [user.name]);
 
             if (result.length > 0) {
-                res.status(409).send("Username already exists.");
+                const error = {
+                    error: "Username already exists."
+                }
+                res.status(409).send(JSON.stringify(error));
             } else {
                 await queryPromise(updateEndPoint);
                 // Insert user
@@ -124,7 +127,10 @@ app.post(host + '/user/login', async (req, res) => {
         let result = await queryPromise(getUserQuery, [user.name, hashPwd]);
 
         if (result.length == 0) {
-            res.status(401).send("Wrong credentials.");
+            const error = {
+                error: "Wrong credentials."
+            }
+            res.status(401).send(JSON.stringify(error));
         } else {
             let verifiedUser = new User(result[0].Id, result[0].Name, user.password, result[0].IsAdmin);
             res.status(200).send(JSON.stringify(verifiedUser));
@@ -153,7 +159,10 @@ app.post(host + '/list', async (req, res) => {
             let result = await queryPromise(getUserQuery, [list.userId]);
 
             if (result.length < 1) {
-                res.status(401).send("User does not exist.");
+                const error = {
+                    error: "User does not exist."
+                }
+                res.status(401).send(JSON.stringify(error));
             } else {
                 await queryPromise(updateEndPoint);
                 // Insert list
@@ -181,7 +190,10 @@ app.get(host + '/list/:userId', async (req, res) => {
     let lists = [];
 
     if (!userId || userId <= 0) {
-        res.status(400).send("User id is invalid.");
+        const error = {
+            error: "User id is invalid."
+        }
+        res.status(400).send(JSON.stringify(error));
     } else {
         try {
             await queryPromise(updateEndPoint);
@@ -197,6 +209,44 @@ app.get(host + '/list/:userId', async (req, res) => {
         } catch (error) {
             console.log(error);
             res.send(JSON.stringify(error));
+        }
+    }
+})
+
+app.put(host + '/list/:id', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 6;";
+
+    const updateListQuery = "UPDATE List SET Title = ? WHERE Id = ?;";
+
+    const { id } = req.params;
+
+    const list = req.body;
+
+    if (list.title.trim().length == 0) {
+        const error = {
+            error: "List title is empty."
+        }
+        res.status(400).send(JSON.stringify(error));
+    } else {
+        try {
+            await queryPromise(updateEndPoint);
+
+            // Update list
+            let result = await queryPromise(updateListQuery, [list.title, id]);
+
+            if (result.affectedRows == 0) {
+                const error = {
+                    error: "List does not exist."
+                }
+                res.status(401).send(JSON.stringify(error));
+            } else {
+                res.sendStatus(200);
+            }
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).send(JSON.stringify(error));
         }
     }
 })
