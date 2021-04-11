@@ -18,11 +18,13 @@ const corsOptions = {
     }
 }
 
+const token = "pdg4x3lHeokMcNQO"
+
 app.use(cors(corsOptions));
 
 const port = process.env.PORT || 8080;
 
-const host = "/4537/termproject/API/V1";
+const host = "/4537/termproject/API/V1/:apiKey";
 
 // Create connection
 const db_connection = mysql.createConnection({
@@ -45,6 +47,17 @@ queryPromise = (queryText, values) => {
     });
 };
 
+validToken = (req, res) => {
+    const { apiKey } = req.params;
+
+    if (token != apiKey) {
+        res.sendStatus(401);
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * ENDPOINTS
  */
@@ -53,6 +66,10 @@ queryPromise = (queryText, values) => {
  * Statistics
  */
 app.get(host + '/endpoint', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 1;";
 
@@ -82,6 +99,10 @@ app.get(host + '/endpoint', async (req, res) => {
  */
 // Create a new account
 app.post(host + '/user/create', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 2;";
 
@@ -92,9 +113,9 @@ app.post(host + '/user/create', async (req, res) => {
     const user = req.body;
 
     // hash the password
-    hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
+    const hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
 
-    if (user.name.trim().length < 3 || user.password.trim().length < 8) {
+    if (user.name.trim().length < 1 || user.password.trim().length < 5) {
         res.status(400).send("User name or password is too short.");
     } else {
         try {
@@ -123,6 +144,10 @@ app.post(host + '/user/create', async (req, res) => {
 
 // Verify user on login
 app.post(host + '/user/login', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 3;";
 
@@ -131,7 +156,7 @@ app.post(host + '/user/login', async (req, res) => {
     const user = req.body;
 
     // hash the password
-    hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
+    const hashPwd = crypto.createHash('sha1').update(user.password).digest('hex');
 
     try {
         await queryPromise(updateEndPoint);
@@ -159,6 +184,10 @@ app.post(host + '/user/login', async (req, res) => {
  */
 // Create new list
 app.post(host + '/list', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 4;";
 
@@ -172,7 +201,7 @@ app.post(host + '/list', async (req, res) => {
         const error = {
             error: "List title is empty or user id is invalid."
         }
-        res.status(400).send(JSON.stringify(list));
+        res.status(400).send(JSON.stringify(error));
     } else {
         try {
             let result = await queryPromise(getUserQuery, [list.userId]);
@@ -200,6 +229,10 @@ app.post(host + '/list', async (req, res) => {
 
 // Get all lists for a user
 app.get(host + '/list/:userId', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 5;";
 
@@ -235,6 +268,10 @@ app.get(host + '/list/:userId', async (req, res) => {
 
 // Rename a list
 app.put(host + '/list/:id', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 6;";
 
@@ -260,7 +297,7 @@ app.put(host + '/list/:id', async (req, res) => {
                 const error = {
                     error: "List does not exist."
                 }
-                res.status(400).send(JSON.stringify(error));
+                res.status(404).send(JSON.stringify(error));
             } else {
                 res.sendStatus(200);
             }
@@ -274,6 +311,10 @@ app.put(host + '/list/:id', async (req, res) => {
 
 // Delete a list
 app.delete(host + '/list/:id', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 7;";
 
@@ -306,6 +347,10 @@ app.delete(host + '/list/:id', async (req, res) => {
  */
 // Create new todo
 app.post(host + '/todo/:listId', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 8;";
 
@@ -330,7 +375,7 @@ app.post(host + '/todo/:listId', async (req, res) => {
                 const error = {
                     error: "List does not exist."
                 }
-                res.status(400).send(JSON.stringify(error));
+                res.status(404).send(JSON.stringify(error));
             } else {
                 await queryPromise(updateEndPoint);
                 // Insert todo
@@ -349,6 +394,10 @@ app.post(host + '/todo/:listId', async (req, res) => {
 
 // Get all todos for a list
 app.get(host + '/todo/:listId', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 9;";
 
@@ -384,6 +433,10 @@ app.get(host + '/todo/:listId', async (req, res) => {
 
 // Set completed flag for todo
 app.put(host + '/todo/:id', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 10;";
 
@@ -416,6 +469,10 @@ app.put(host + '/todo/:id', async (req, res) => {
 
 // Delete a todo
 app.delete(host + '/todo/:id', async (req, res) => {
+    if (!validToken(req, res)) {
+        return;
+    }
+
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 11;";
 

@@ -1,0 +1,454 @@
+swagger: "2.0"
+info:
+  description: "This is a Todo List."
+  version: "1.0.0"
+  title: "Todo List API"
+host: "isalabprojects.xyz"
+basePath: "/4537/termproject/API/V1/{API key}"
+tags:
+- name: "list"
+  description: "Operations about list of todo items"
+- name: "todo"
+  description: "Operations with todo items"
+- name: "endpoint"
+  description: "For admin-side statistics"
+- name: "user"
+  description: "Operations about user"
+schemes:
+- "https"
+paths:
+  /list:
+    post:
+      tags:
+      - "list"
+      summary: "Create a new list for a user"
+      description: ""
+      operationId: "createList"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "List object that needs to be added"
+        required: true
+        schema:
+          $ref: "#/definitions/ListPost"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+              $ref: "#/definitions/ListFull"
+        "400":
+          description: "Invalid input"
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "User does not exist."
+          schema:
+             $ref: "#/definitions/Error"
+  /list/{id}:
+    get:
+      tags:
+      - "list"
+      summary: "Retrieve a list of all the todo lists"
+      description: ""
+      operationId: "getLists"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "ID of currently logged-in user"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: "array"
+            items: 
+              $ref: "#/definitions/ListFull"
+        "400":
+          description: "Invalid ID supplied"
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+    put:
+      tags:
+      - "list"
+      summary: "Updated list"
+      operationId: "updateList"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of list that needs to be updated"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Updated list"
+        required: true
+        schema:
+          $ref: "#/definitions/ListTitle"
+      responses:
+        "200":
+          description: "OK"
+        "400":
+          description: "List title is empty."
+          schema:
+             $ref: "#/definitions/Error"
+        "404":
+          description: "List does not exist."
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+    delete:
+      tags:
+      - "list"
+      summary: "Deletes a list"
+      description: ""
+      operationId: "deleteList"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of list to be deleted"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        "200":
+          description: "OK"
+        "400":
+          description: "List does not exist."
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+  /todo/{id}:
+    get:
+      tags:
+      - "todo"
+      summary: "Get todo items by list ID"
+      description: "Returns todos for this list"
+      operationId: "getTodosByListId"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of todo list whose items to return"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/TodoFull"
+        "400":
+          description: "List id is invalid."
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+    post:
+      tags:
+      - "todo"
+      summary: "Adds a new todo item to the list with given list ID"
+      description: ""
+      operationId: "addTodo"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of list to which todo item is added"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "body"
+        in: "body"
+        description: "New todo item"
+        required: true
+        schema:
+          $ref: "#/definitions/TodoPost"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/TodoCreated"
+        "400":
+          description: "Invalid input"
+          schema:
+             $ref: "#/definitions/Error"
+        "404":
+          description: "List does not exist."
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+    put:
+      tags:
+      - "todo"
+      summary: "Toggles todo item completed status"
+      description: ""
+      operationId: "toggleTodo"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of todo item to be toggled"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "body"
+        in: "body"
+        description: "Updated todo item"
+        required: true
+        schema:
+          $ref: "#/definitions/TodoPut"
+      responses:
+        "200":
+          description: "OK"
+        "400":
+          description: "Todo does not exist."
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+    delete:
+      tags:
+      - "todo"
+      summary: "Deletes a todo item from the list"
+      description: ""
+      operationId: "deleteTodo"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of todo item to be deleted"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        "200":
+          description: "OK"
+        "400":
+          description: "Todo does not exist."
+          schema:
+             $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+  /user/create:
+    post:
+      tags:
+      - "user"
+      summary: "Creates a new user"
+      description: ""
+      operationId: "createUser"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "User object"
+        required: true
+        schema:
+            $ref: "#/definitions/UserPost"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/UserFull"
+        "400":
+          description: "User name or password is too short."
+          schema:
+           $ref: "#/definitions/Error"
+        "409":
+          description: "Username already exists."
+          schema:
+           $ref: "#/definitions/Error"
+        "401":
+          description: "Unauthorized"
+  /user/login:
+    post:
+      tags:
+      - "user"
+      summary: "Logs user into the system"
+      description: ""
+      operationId: "loginUser"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "User object"
+        required: true
+        schema:
+            $ref: "#/definitions/UserLogin"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/UserFull"
+        "401":
+          description: "Wrong credentials."
+          schema:
+           $ref: "#/definitions/Error"
+  /endpoint:
+    get:
+      tags:
+      - "endpoint"
+      summary: "Get statistics for endpoints"
+      description: "Returns a list of endpoints"
+      operationId: "getEndpoints"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EndpointFull"
+        "401":
+          description: "Unauthorized"
+definitions:
+  UserFull:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+      password:
+        type: "string"
+      isAdmin:
+        type: "boolean"
+  UserPost:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      password:
+        type: "string"
+      isAdmin:
+        type: "boolean"
+  UserLogin:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      password:
+        type: "string"
+  ListFull:
+    type: "object"
+    required:
+    - "title"
+    - "id"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      title:
+        type: "string"
+        example: "chores"
+      userId:
+        type: "integer"
+  ListPost:
+    type: "object"
+    required:
+    - "title"
+    - "userId"
+    properties:
+      title:
+        type: "string"
+        example: "chores"
+      userId:
+        type: "integer"
+        example: 1
+  ListTitle:
+    type: "object"
+    required:
+    - "title"
+    properties:
+      title:
+        type: "string"
+        example: "chores"
+  TodoFull:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        example: "7"
+      title:
+        type: "string"
+        example: "Todo Title"
+      listId:
+        type: "integer"
+        example: "2"
+      completed:
+        type: "boolean"
+        example: "true"
+  TodoPost:
+    type: "object"
+    properties:
+      title:
+        type: "string"
+        example: "Todo Title"
+  TodoCreated:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        example: "4"
+      title:
+        type: "string"
+        example: "Todo Title"
+  TodoPut:
+    type: "object"
+    properties:
+      completed:
+        type: "boolean"
+        example: "true"
+  EndpointFull:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        example: "9"
+      url:
+        type: "string"
+        example: "/API/V1/endpoint"
+      method:
+        type: "string"
+        example: "GET"
+      requests:
+        type: "integer"
+        example: "12"
+  Error:
+    type: object
+    properties:
+      error: 
+        type: "string"
