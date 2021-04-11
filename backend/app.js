@@ -45,6 +45,13 @@ queryPromise = (queryText, values) => {
     });
 };
 
+/**
+ * ENDPOINTS
+ */
+
+/**
+ * Statistics
+ */
 app.get(host + '/endpoint', async (req, res) => {
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 1;";
@@ -70,6 +77,10 @@ app.get(host + '/endpoint', async (req, res) => {
     }
 })
 
+/**
+ * User Account
+ */
+// Create a new account
 app.post(host + '/user/create', async (req, res) => {
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 2;";
@@ -110,6 +121,7 @@ app.post(host + '/user/create', async (req, res) => {
     }
 })
 
+// Verify user on login
 app.post(host + '/user/login', async (req, res) => {
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 3;";
@@ -142,6 +154,10 @@ app.post(host + '/user/login', async (req, res) => {
     }
 })
 
+/**
+ * Lists
+ */
+// Create new list
 app.post(host + '/list', async (req, res) => {
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 4;";
@@ -153,7 +169,10 @@ app.post(host + '/list', async (req, res) => {
     const list = req.body;
 
     if (list.title.trim().length == 0 || list.userId <= 0) {
-        res.status(400).send("List title is empty or user id is invalid.");
+        const error = {
+            error: "List title is empty or user id is invalid."
+        }
+        res.status(400).send(JSON.stringify(list));
     } else {
         try {
             let result = await queryPromise(getUserQuery, [list.userId]);
@@ -179,6 +198,7 @@ app.post(host + '/list', async (req, res) => {
     }
 })
 
+// Get all lists for a user
 app.get(host + '/list/:userId', async (req, res) => {
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 5;";
@@ -213,6 +233,7 @@ app.get(host + '/list/:userId', async (req, res) => {
     }
 })
 
+// Rename a list
 app.put(host + '/list/:id', async (req, res) => {
     // increase requests count
     const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 6;";
@@ -239,7 +260,7 @@ app.put(host + '/list/:id', async (req, res) => {
                 const error = {
                     error: "List does not exist."
                 }
-                res.status(401).send(JSON.stringify(error));
+                res.status(400).send(JSON.stringify(error));
             } else {
                 res.sendStatus(200);
             }
@@ -248,6 +269,177 @@ app.put(host + '/list/:id', async (req, res) => {
             console.log(error);
             res.status(500).send(JSON.stringify(error));
         }
+    }
+})
+
+// Delete a list
+app.delete(host + '/list/:id', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 7;";
+
+    const deleteListQuery = "DELETE FROM List WHERE Id = ?;";
+
+    const { id } = req.params;
+    try {
+        await queryPromise(updateEndPoint);
+
+        // Delete list
+        let result = await queryPromise(deleteListQuery, [id]);
+
+        if (result.affectedRows == 0) {
+            const error = {
+                error: "List does not exist."
+            }
+            res.status(400).send(JSON.stringify(error));
+        } else {
+            res.sendStatus(200);
+        }
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(JSON.stringify(error));
+    }
+})
+
+/**
+ * "Todos"
+ */
+// Create new todo
+app.post(host + '/todo/:listId', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 8;";
+
+    const getListQuery = "SELECT 1 FROM List WHERE Id = ?";
+
+    const insertTodoQuery = "INSERT INTO Todo (Title, ListId) VALUES(?, ?)";
+
+    const todo = req.body;
+
+    const { listId } = req.params;
+
+    if (todo.title.trim().length == 0) {
+        const error = {
+            error: "Todo title is empty."
+        }
+        res.status(400).send(JSON.stringify(error));
+    } else {
+        try {
+            let result = await queryPromise(getListQuery, [listId]);
+
+            if (result.length < 1) {
+                const error = {
+                    error: "List does not exist."
+                }
+                res.status(400).send(JSON.stringify(error));
+            } else {
+                await queryPromise(updateEndPoint);
+                // Insert todo
+                let result = await queryPromise(insertTodoQuery, [todo.title, listId]);
+                todo.id = result.insertId;
+
+                res.status(200).send(JSON.stringify(todo));
+            }
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).send(JSON.stringify(error));
+        }
+    }
+})
+
+// Get all todos for a list
+app.get(host + '/todo/:listId', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 9;";
+
+    const getAllTodosForListQuery = "SELECT Id, Title, ListId, Completed FROM Todo Where ListId = ?";
+
+    const { listId } = req.params;
+
+    let todos = [];
+
+    if (!listId || listId <= 0) {
+        const error = {
+            error: "List id is invalid."
+        }
+        res.status(400).send(JSON.stringify(error));
+    } else {
+        try {
+            await queryPromise(updateEndPoint);
+            let todoResults = await queryPromise(getAllTodosForListQuery, [listId]);
+
+            for (const result of todoResults) {
+                let todo = new Todo(result.Id, result.Title, result.ListId, result.Completed);
+
+                todos.push(todo);
+            }
+
+            res.send(JSON.stringify(todos));
+        } catch (error) {
+            console.log(error);
+            res.send(JSON.stringify(error));
+        }
+    }
+})
+
+// Set completed flag for todo
+app.put(host + '/todo/:id', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 10;";
+
+    const updateTodoQuery = "UPDATE Todo SET Completed = ? WHERE Id = ?;";
+
+    const { id } = req.params;
+
+    const todo = req.body;
+
+    try {
+        await queryPromise(updateEndPoint);
+
+        // Update todo
+        let result = await queryPromise(updateTodoQuery, [todo.completed, id]);
+
+        if (result.affectedRows == 0) {
+            const error = {
+                error: "Todo does not exist."
+            }
+            res.status(400).send(JSON.stringify(error));
+        } else {
+            res.sendStatus(200);
+        }
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(JSON.stringify(error));
+    }
+})
+
+// Delete a todo
+app.delete(host + '/todo/:id', async (req, res) => {
+    // increase requests count
+    const updateEndPoint = "UPDATE Endpoint SET Requests = Requests + 1 WHERE Id = 11;";
+
+    const deleteTodoQuery = "DELETE FROM Todo WHERE Id = ?;";
+
+    const { id } = req.params;
+    try {
+        await queryPromise(updateEndPoint);
+
+        // Delete todo
+        let result = await queryPromise(deleteTodoQuery, [id]);
+
+        if (result.affectedRows == 0) {
+            const error = {
+                error: "Todo does not exist."
+            }
+            res.status(400).send(JSON.stringify(error));
+        } else {
+            res.sendStatus(200);
+        }
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(JSON.stringify(error));
     }
 })
 
