@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Statistics</title>
+    <style>
+      .tg {
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
+      .tg td {
+        border-color: black;
+        border-style: solid;
+        border-width: 1px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        overflow: hidden;
+        padding: 10px 5px;
+        word-break: normal;
+      }
+      .tg th {
+        border-color: black;
+        border-style: solid;
+        border-width: 1px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        font-weight: normal;
+        overflow: hidden;
+        padding: 10px 5px;
+        word-break: normal;
+      }
+      .tg .tg-0lax {
+        text-align: left;
+        vertical-align: top;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>API Statistics</h1>
+    <table id="statsTable" class="tg">
+      <thead>
+        <tr>
+          <th class="tg-0lax">Method</th>
+          <th class="tg-0lax">Endpoint</th>
+          <th class="tg-0lax">Requests</th>
+        </tr>
+      </thead>
+      <tbody id="statsTableBody">
+        <tr>
+          <td class="tg-0lax">GET</td>
+          <td class="tg-0lax">/4537/termproject/API/V1/endpoint</td>
+          <td class="tg-0lax" id="getstats">0</td>
+        </tr>
+      </tbody>
+    </table>
+    <script>
+      const host =
+        "https://isalabprojects.xyz/4537/termproject/API/V1/pdg4x3lHeokMcNQO";
+      const resource = "/endpoint";
+
+      async function getStats() {
+        const result = await fetch(host + resource)
+          .then((response) => response.json())
+          .catch((err) => console.log("Request Failed", err)); // Catch errors
+        populateTable(result);
+      }
+      getStats();
+
+      function populateTable(result) {
+        // Remove all existing table rows
+        const tableBody = document.getElementById("statsTableBody");
+        tableBody.innerHTML = "";
+
+        if (result.length == 0) {
+          tableBody.innerHTML = "<div>You have no statistics.</div>";
+        }
+
+        // Populate new table with lists from GET response
+        result.forEach((element) => {
+          const tr = document.createElement("tr");
+          const td1 = document.createElement("td");
+          const td2 = document.createElement("td");
+          const td3 = document.createElement("td");
+
+          td1.innerHTML = element.method;
+          td2.innerHTML = element.url;
+          td3.innerHTML = element.requests;
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tableBody.appendChild(tr);
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+    <title>Create Account</title>
+    <style>
+      h1 {
+        margin-top: 20px;
+      }
+
+      button,
+      input {
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="form_container" class="container-fluid">
+      <h1><a>Create Account</a></h1>
+      <form id="createUserForm">
+        <div class="form-group">
+          <label class="col-form-label" for="name">Username</label>
+          <input
+            name="name"
+            id="name"
+            type="text"
+            class="form-control"
+            maxlength="255"
+            pattern=".{1,}"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="col-form-label" for="password">Password</label>
+          <input
+            name="password"
+            type="password"
+            class="form-control"
+            id="password"
+            title="Password should contain at least 5 characters"
+            autocomplete="on"
+            maxlength="255"
+            pattern=".{5,}"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="col-form-label" for="confirmPassword"
+            >Re-enter Password</label
+          >
+          <input
+            name="confirmPassword"
+            type="password"
+            class="form-control"
+            id="confirmPassword"
+            placeholder="Passwords should match"
+            title="Password should contain at least 5 characters"
+            autocomplete="on"
+            maxlength="255"
+            pattern=".{5,}"
+            required
+          />
+        </div>
+        <div>
+          <input
+            type="submit"
+            class="btn btn-primary"
+            name="submit"
+            value="Submit"
+          />
+          <input
+            type="button"
+            class="btn btn-secondary"
+            name="cancel"
+            value="Cancel"
+            onclick="goBack()"
+          />
+        </div>
+      </form>
+    </div>
+    <script>
+      const host =
+        "https://isalabprojects.xyz/4537/termproject/API/V1/pdg4x3lHeokMcNQO";
+      const createUserForm = document.getElementById("createUserForm");
+
+      createUserForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmPassword")
+          .value;
+        console.log(password);
+        console.log(confirmPassword);
+        if (password != confirmPassword) {
+          alert("Passwords do not match.");
+        } else {
+          let formData = new FormData(this);
+          formData.delete("confirmPassword");
+          formData.append("isAdmin", false);
+          const body = JSON.stringify(Object.fromEntries(formData));
+          const intermediate = JSON.parse(body);
+          intermediate["isAdmin"] = false;
+          const newbody = JSON.stringify(intermediate);
+
+          fetch(host + "/user/create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: newbody,
+          })
+            .then(function (response) {
+              return response.json();
+            })
+            .then(function (json) {
+              myStorage = window.localStorage;
+              if (json.id) {
+                myStorage.setItem("userId", json.id);
+                window.alert("Account successfully created!");
+                window.location.href = "../list/";
+              } else {
+                console.log(json.error);
+              }
+            })
+            .catch(function (error) {
+              console.error(error);
+            });
+        }
+      });
+
+      function goBack() {
+        window.history.back();
+      }
+    </script>
+  </body>
+</html>

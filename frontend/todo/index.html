@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+    <title>Todo List</title>
+    <style>
+      h1 {
+        margin-top: 20px;
+      }
+
+      button,
+      input {
+        margin: 5px;
+      }
+
+      .completedTodoTxt {
+        text-decoration: line-through;
+        color: grey;
+      }
+
+      .table {
+        width: 100%;
+      }
+
+      .td2 {
+        width: 100%;
+      }
+
+      input[type="checkbox"] {
+        /* Double-sized Checkboxes */
+        transform: scale(2);
+        -ms-transform: scale(2); /* IE */
+        -moz-transform: scale(2); /* FF */
+        -webkit-transform: scale(2); /* Safari and Chrome */
+        -o-transform: scale(2); /* Opera */
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <h1 id="pageTitle">List Title</h1>
+      <br />
+      <table id="todoTable" class="table"></table>
+    </div>
+    <div id="form_container" class="container-fluid">
+      <h3><a>Add New Todo Item</a></h3>
+      <form id="createTodo" class="form-inline">
+        <div>
+          <input
+            name="title"
+            type="text"
+            class="form-control"
+            placeholder="Name your todo"
+            maxlength="255"
+            pattern=".{1,}"
+            required
+          />
+          <input
+            type="submit"
+            class="btn btn-primary"
+            name="submit"
+            value="Add Item"
+          />
+        </div>
+      </form>
+    </div>
+    <br />
+    <div class="container-fluid">
+      <div id="adminLogin">
+        <input
+          type="button"
+          name="apiadmin"
+          class="btn btn-secondary"
+          id="apiadmin"
+          value="API Statistics"
+          disabled
+        />
+      </div>
+      <br />
+      <div>
+        <input
+          type="button"
+          name="backBtn"
+          class="btn btn-secondary"
+          id="backBtn"
+          value="Back"
+          onclick="goBack()"
+        />
+      </div>
+    </div>
+    <script>
+      const host =
+        "https://isalabprojects.xyz/4537/termproject/API/V1/pdg4x3lHeokMcNQO";
+
+      function populateTable(result) {
+        // Remove all existing table rows
+        const table = document.getElementById("todoTable");
+        table.innerHTML = "";
+
+        if (result.length == 0) {
+          table.innerHTML =
+            '<div class="alert alert-warning" role="alert">You have no todo items. Add one below to get started</div>';
+        }
+
+        // Populate new table with todos from GET response
+        result.forEach((element) => {
+          const tr = document.createElement("tr");
+          const td1 = document.createElement("td");
+          const td2 = document.createElement("td");
+          const td3 = document.createElement("td");
+
+          // Create and attach a Completion Toggle to Table cell
+          const completeToggle = document.createElement("input");
+          completeToggle.setAttribute("type", "checkbox");
+          completeToggle.setAttribute("id", "completeToggle");
+          td1.appendChild(completeToggle);
+
+          if (element.completed == 1) {
+            completeToggle.checked = true;
+            td2.setAttribute("class", "completedTodoTxt td2 align-middle");
+          } else {
+            completeToggle.checked = false;
+            td2.setAttribute("class", "td2 align-middle");
+          }
+
+          // Completion Toggle Event Listener (sends PUT request)
+          completeToggle.addEventListener("change", (event) => {
+            let body = "";
+            if (completeToggle.checked) {
+              body = '{"completed": true}';
+              td2.setAttribute("class", "completedTodoTxt td2 align-middle");
+            } else {
+              body = '{"completed": false}';
+              td2.setAttribute("class", "td2 align-middle");
+            }
+            console.log(body);
+            fetch(host + "/todo/" + element.id, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: body,
+            }).catch((err) => console.log("Request Failed", err)); // Catch errors
+          });
+
+          // Create and attach Delete button to Table cell
+          const deleteBtn = document.createElement("button");
+          deleteBtn.setAttribute("class", "btn btn-outline-danger");
+          deleteBtn.appendChild(document.createTextNode("Delete"));
+          td3.appendChild(deleteBtn);
+
+          // Delete button Event Listener (sends DELETE request)
+          deleteBtn.addEventListener("click", (event) => {
+            console.log(element.id);
+            sendRequest(host + "/todo/" + element.id, null, "DELETE");
+          });
+
+          td2.innerHTML = element.title;
+          td1.setAttribute("class", "align-middle td1");
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          table.appendChild(tr);
+        });
+      }
+
+      async function getTodos() {
+        const myStorage = window.localStorage;
+        listTitle = myStorage.getItem("listTitle");
+        document.getElementById("pageTitle").innerHTML = listTitle;
+        const result = await fetch(
+          host + "/todo/" + myStorage.getItem("listId")
+        )
+          .then((response) => response.json())
+          .catch((err) => console.log("Request Failed", err)); // Catch errors
+
+        populateTable(result);
+      }
+      getTodos();
+
+      const createTodoForm = document.getElementById("createTodo");
+      createTodoForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const listId = window.localStorage.getItem("listId");
+        const formData = new FormData(this);
+        const body = JSON.stringify(Object.fromEntries(formData));
+        console.log(body);
+        createTodoForm.reset();
+        sendRequest(host + "/todo/" + listId, body, "POST");
+      });
+
+      const apiAdminBtn = document.getElementById("apiadmin");
+      apiAdminBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        window.location.href = "../admin.html";
+      });
+
+      async function sendRequest(uri, body, method) {
+        await fetch(uri, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: body,
+        }).catch((err) => console.log("Request Failed", err)); // Catch errors
+        getTodos();
+      }
+
+      function goBack() {
+        window.history.back();
+      }
+    </script>
+  </body>
+</html>

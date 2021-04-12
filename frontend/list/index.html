@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+    <title>Select a List</title>
+    <style>
+      #listId {
+        display: none;
+      }
+
+      h1 {
+        margin-top: 20px;
+      }
+
+      .table {
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      button,
+      input {
+        margin: 5px;
+      }
+
+      td {
+        padding-left: 0.2rem !important;
+        padding-right: 0.2rem !important;
+      }
+
+      .td1 {
+        width: 35%;
+      }
+
+      .td2 {
+        justify-content: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tableContainer" class="container-fluid">
+      <h1>Select a List</h1>
+      <br />
+      <table id="listsTable" class="table"></table>
+    </div>
+    <br />
+    <div id="form_container" class="container-fluid">
+      <h3><a>Create New List</a></h3>
+      <form id="createList" class="form-inline">
+        <div>
+          <input
+            name="title"
+            type="text"
+            class="form-control"
+            placeholder="Enter a title"
+            maxlength="255"
+            pattern=".{1,}"
+            required
+          />
+          <input
+            type="submit"
+            class="btn btn-primary"
+            name="submit"
+            value="Create"
+          />
+        </div>
+      </form>
+    </div>
+    <br />
+    <div id="buttonsContainer" class="container-fluid">
+      <div id="adminLogin">
+        <input
+          type="button"
+          name="apiadmin"
+          class="btn btn-secondary"
+          id="apiadmin"
+          value="API Statistics"
+          disabled
+        />
+      </div>
+      <br />
+      <div>
+        <input
+          type="button"
+          name="backBtn"
+          class="btn btn-secondary"
+          id="backBtn"
+          value="Back"
+          onclick="goBack()"
+        />
+      </div>
+    </div>
+
+    <script>
+      const host =
+        "https://isalabprojects.xyz/4537/termproject/API/V1/pdg4x3lHeokMcNQO";
+
+      function populateTable(result) {
+        // Remove all existing table rows
+        const table = document.getElementById("listsTable");
+        table.innerHTML = "";
+
+        if (result.length == 0) {
+          table.innerHTML =
+            '<div class="alert alert-warning" role="alert">You have no lists. Create a list to get started</div>';
+        }
+
+        // Populate new table with lists from GET response
+        result.forEach((element) => {
+          const tr = document.createElement("tr");
+          const td1 = document.createElement("td");
+          const td2 = document.createElement("td");
+
+          // Create and attach Open Button to Table cell
+          const openBtn = document.createElement("button");
+          openBtn.setAttribute("class", "btn btn-primary");
+          openBtn.appendChild(document.createTextNode("OPEN 📂"));
+          td2.appendChild(openBtn);
+
+          // Open button Event Listener (sends GET request)
+          openBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            const myStorage = window.localStorage;
+            myStorage.setItem("listId", element.id);
+            myStorage.setItem("listTitle", element.title);
+            window.location.href = "../todo/";
+          });
+
+          // Create and attach Rename Button to Table cell
+          const renameBtn = document.createElement("button");
+          renameBtn.setAttribute("class", "btn btn-outline-secondary");
+          renameBtn.appendChild(document.createTextNode("EDIT ✎"));
+          td2.appendChild(renameBtn);
+
+          // Rename button Event Listener (sends PUT request)
+          renameBtn.addEventListener("click", (event) => {
+            console.log(element.id);
+            renameBtn.disabled = true;
+            const currentTitle = td1.innerHTML;
+            td1.innerHTML = `<form id="renameListForm" class="form-inline"><input type="text" class="form-control" id="title" name="title" pattern=".{1,}" placeholder="${currentTitle}" value="${currentTitle}"><input type="submit" class="form-control btn btn-primary" value="SAVE ✔️"></form>`;
+            const renameListForm = document.getElementById("renameListForm");
+            renameListForm.addEventListener("submit", function (e) {
+              e.preventDefault();
+              renameBtn.disabled = false;
+              const formData = new FormData(this);
+              const body = JSON.stringify(Object.fromEntries(formData));
+              console.log(body);
+              sendRequest(host + "/list/" + element.id, body, "PUT");
+            });
+          });
+
+          // Create and attach Delete button to Table cell
+          const deleteBtn = document.createElement("button");
+          deleteBtn.setAttribute("class", "btn btn-outline-danger");
+          deleteBtn.appendChild(document.createTextNode("🗑"));
+          td2.appendChild(deleteBtn);
+
+          // Delete button Event Listener (sends DELETE request)
+          deleteBtn.addEventListener("click", (event) => {
+            console.log(element.id);
+            sendRequest(host + "/list/" + element.id, null, "DELETE");
+          });
+
+          td1.innerHTML = element.title;
+          td1.setAttribute("class", "align-middle td1");
+          td2.setAttribute("class", "td2");
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          // tr.appendChild(td3);
+          // tr.appendChild(td4);
+          table.appendChild(tr);
+        });
+      }
+
+      async function getLists() {
+        const myStorage = window.localStorage;
+        const userId = myStorage.getItem("userId");
+        const result = await fetch(host + "/list/" + userId)
+          .then((response) => response.json())
+          .catch((err) => console.log("Request Failed", err)); // Catch errors
+
+        if (userId == 5) {
+          document.getElementById("apiadmin").disabled = false;
+        }
+        populateTable(result);
+      }
+      getLists();
+
+      const createListForm = document.getElementById("createList");
+      createListForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const userId = window.localStorage.getItem("userId");
+        const formData = new FormData(this);
+        formData.append("userId", userId);
+        const body = JSON.stringify(Object.fromEntries(formData));
+        console.log(body);
+        createListForm.reset();
+        sendRequest(host + "/list", body, "POST");
+      });
+
+      const apiAdminBtn = document.getElementById("apiadmin");
+      apiAdminBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        window.location.href = "../admin.html";
+      });
+
+      async function sendRequest(uri, body, method) {
+        await fetch(uri, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: body,
+        }).catch((err) => console.log("Request Failed", err)); // Catch errors
+        getLists();
+      }
+
+      function goBack() {
+        window.history.back();
+      }
+    </script>
+  </body>
+</html>
